@@ -19,8 +19,6 @@ export const SLOT_STEP_MINUTES = 30;
 const FIRST_START = 10 * 60;
 const LAST_START = 22 * 60;
 const LAST_START_EVE = 23 * 60;
-/** One crew: a visit needs this much free time before and after it to cross the island. */
-export const TRAVEL_BUFFER_MINUTES = 30;
 /** The earliest start that can still be booked, counted from now. */
 export const MIN_LEAD_MINUTES = 120;
 
@@ -66,14 +64,6 @@ export function isProgram(value: unknown): value is ProgramId {
 
 export type BusyInterval = { start_at: number; end_at: number };
 
-/** Interval bounds widened by the travel buffer, for overlap queries against stored visits. */
-export function bufferedInterval({ start, end }: { start: number; end: number }) {
-  return {
-    start: start - TRAVEL_BUFFER_MINUTES * MINUTE,
-    end: end + TRAVEL_BUFFER_MINUTES * MINUTE,
-  };
-}
-
 export function earliestStart(now: number) {
   return now + MIN_LEAD_MINUTES * MINUTE;
 }
@@ -89,19 +79,26 @@ export function freeTimes(
   now: number,
 ): string[] {
   return offeredTimes(date, program).filter((time) => {
-    const interval = programInterval(date, time, program);
-    if (!isBookableStart(interval.start, now)) return false;
-    const wide = bufferedInterval(interval);
-    return !busy.some((row) => row.start_at < wide.end && row.end_at > wide.start);
+    const { start, end } = programInterval(date, time, program);
+    if (!isBookableStart(start, now)) return false;
+    return !busy.some((row) => row.start_at < end && row.end_at > start);
   });
 }
 
-/** Time range that holds every visit of the season, including buffers. */
+/** Time range that holds every visit of the season. */
 export function seasonRange() {
-  return bufferedInterval({
+  return {
     start: phuketTimestamp(SEASON[0]!, "00:00"),
     end: phuketTimestamp(SEASON.at(-1)!, "24:00") + 60 * MINUTE,
-  });
+  };
+}
+
+/** Time range that holds every visit starting on this date. */
+export function dayRange(date: string, program: ProgramId) {
+  return {
+    start: phuketTimestamp(date, "00:00"),
+    end: programInterval(date, "24:00", program).end,
+  };
 }
 
 /** Number of free starts on each season date. */

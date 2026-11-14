@@ -86,18 +86,16 @@ test("all price bands, schedule boundaries and midnight booking options", () => 
   assert.deepEqual(normalizeSlot(newYear, "10:00"), { date: newYear, time: "10:00" });
 });
 
-test("visits keep a 30-minute travel gap in both directions", (t) => {
+test("the actual duration blocks overlapping starts in both directions", (t) => {
   const store = setup(t);
   assert.equal(store.book(request("16:00", "express"), now).outcome, "created");
   assert.equal(store.book(request("16:00", "khorovod"), now).outcome, "unavailable");
-  assert.equal(store.book(request("15:30", "khorovod"), now).outcome, "unavailable");
-  assert.equal(store.book(request("16:30", "express"), now).outcome, "unavailable");
-  assert.equal(store.book(request("15:00", "khorovod"), now).outcome, "created");
-  assert.equal(store.book(request("17:00", "vip"), now).outcome, "created");
+  assert.equal(store.book(request("15:30", "vip"), now).outcome, "unavailable");
+  assert.equal(store.book(request("15:30", "khorovod"), now).outcome, "created");
+  assert.equal(store.book(request("16:30", "vip"), now).outcome, "created");
   const free = store.available(date, "express", now);
-  assert(!free.includes("16:30"));
-  assert(!free.includes("18:00"));
-  assert(free.includes("18:30"));
+  assert(!free.includes("17:00"));
+  assert(free.includes("17:30"));
 });
 
 test("starts closer than two hours from now are not offered", (t) => {
@@ -110,18 +108,14 @@ test("starts closer than two hours from now are not offered", (t) => {
   assert.equal(store.calendar("express", now)[eve], offeredTimes(eve, "express").length);
 });
 
-test("midnight closes 31 December and needs the travel gap after a late visit", (t) => {
+test("midnight closes 31 December and shares interval edges with 23:00", (t) => {
   const store = setup(t);
   assert.equal(store.book(request("23:30", "express", eve), now).outcome, "invalid");
   assert.equal(store.book(request("24:00", "vip", eve), now).outcome, "invalid");
   assert.equal(store.book(request("00:00", "express", eve), now).outcome, "invalid");
   assert.equal(store.book(request("23:00", "vip", eve), now).receipt.total, 29000);
-  assert.equal(store.book(request("24:00", "express", eve), now).outcome, "unavailable");
-
-  const other = setup(t);
-  assert.equal(other.book(request("23:00", "khorovod", eve), now).outcome, "created");
-  assert.equal(other.book(request("24:00", "express", eve), now).receipt.total, 32000);
-  assert.equal(other.book(request("24:00", "khorovod", eve), now).outcome, "unavailable");
+  assert.equal(store.book(request("24:00", "express", eve), now).receipt.total, 32000);
+  assert.equal(store.book(request("24:00", "khorovod", eve), now).outcome, "unavailable");
 });
 
 test("retry returns the same receipt; reject or expiry releases only pending holds", (t) => {
@@ -195,8 +189,7 @@ test("public API validates data, rejects foreign origins and lists remaining tim
   assert.equal(slots.headers.get("cache-control"), "no-store");
   const { times } = await slots.json();
   assert(!times.includes("16:00"));
-  assert(!times.includes("16:30"));
-  assert(times.includes("17:00"));
+  assert(times.includes("16:30"));
   const calendar = await api.handle(
     new Request("http://localhost:3000/api/calendar?program=khorovod"),
   );

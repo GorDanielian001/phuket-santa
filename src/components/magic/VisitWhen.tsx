@@ -375,8 +375,7 @@ export function VisitWhen({
         now={now}
       />
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground/80">
-        Запись открыта не позднее чем за {MIN_LEAD_MINUTES / 60} часа до начала. Между визитами мы
-        закладываем время на дорогу, поэтому соседние слоты могут быть заняты.
+        Запись открыта не позднее чем за {MIN_LEAD_MINUTES / 60} часа до начала.
       </p>
     </>
   );

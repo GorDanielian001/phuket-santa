@@ -2,7 +2,7 @@ import type { BookingRequest } from "./booking.ts";
 import type { AsyncBookingStore, BookingStatus } from "./booking-store.server.ts";
 import { calculate } from "./pricing.ts";
 import {
-  bufferedInterval,
+  dayRange,
   freeDays,
   earliestStart,
   freeTimes,
@@ -46,11 +46,7 @@ export function openD1BookingStore(db: BookingDatabase): AsyncBookingStore {
 
   return {
     async available(date, program, now = Date.now()) {
-      const range = bufferedInterval({
-        start: programInterval(date, "00:00", program).start,
-        end: programInterval(date, "24:00", program).end,
-      });
-      return freeTimes(date, program, await busy(range, now), now);
+      return freeTimes(date, program, await busy(dayRange(date, program), now), now);
     },
     async calendar(program, now = Date.now()) {
       return freeDays(program, await busy(seasonRange(), now), now);
@@ -62,7 +58,6 @@ export function openD1BookingStore(db: BookingDatabase): AsyncBookingStore {
         return { outcome: "invalid" };
       }
       const { start, end } = programInterval(date, time, program);
-      const wide = bufferedInterval({ start, end });
       const payload = JSON.stringify({ selection, name, contact, address, notes });
       const holdUntil = Math.min(start, now + 30 * 60_000);
       // The overlap check and insert are one SQL write. The trigger adds the outbox row in that write.
@@ -86,8 +81,8 @@ export function openD1BookingStore(db: BookingDatabase): AsyncBookingStore {
           holdUntil,
           start,
           earliestStart(now),
-          wide.end,
-          wide.start,
+          end,
+          start,
           now,
         )
         .first<Row>();

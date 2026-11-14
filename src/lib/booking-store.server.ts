@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { calculate, type ProgramId } from "./pricing.ts";
 import {
-  bufferedInterval,
+  dayRange,
   freeDays,
   freeTimes,
   isBookableStart,
@@ -117,10 +117,7 @@ export function openBookingStore(filename: string) {
   return {
     close: () => db.close(),
     available(date: string, program: ProgramId, now = Date.now()) {
-      const range = bufferedInterval({
-        start: programInterval(date, "00:00", program).start,
-        end: programInterval(date, "24:00", program).end,
-      });
+      const range = dayRange(date, program);
       const busy = busyBetween.all(range.end, range.start, now) as BusyInterval[];
       return freeTimes(date, program, busy, now);
     },
@@ -138,7 +135,6 @@ export function openBookingStore(filename: string) {
       const payload = JSON.stringify({ selection, name, contact, address, notes });
       const hash = createHash("sha256").update(payload).digest("hex");
       const { start, end } = programInterval(date, time, program);
-      const wide = bufferedInterval({ start, end });
       return transaction(() => {
         const previous = byRequest.get(requestId) as StoredBooking | undefined;
         if (previous) {
@@ -147,7 +143,7 @@ export function openBookingStore(filename: string) {
           if (status === "expired" || status === "rejected") return { outcome: status } as const;
           return { outcome: "existing", receipt: receipt(previous) } as const;
         }
-        if (!isBookableStart(start, now) || overlap.get(wide.end, wide.start, now))
+        if (!isBookableStart(start, now) || overlap.get(end, start, now))
           return { outcome: "unavailable" } as const;
         const total = calculate(selection).total;
         const holdUntil = Math.min(start, now + HOLD_MS);

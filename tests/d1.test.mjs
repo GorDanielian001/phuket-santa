@@ -57,8 +57,8 @@ test("D1 SQL atomically reserves slots, expires holds, and leases notifications"
   assert.equal((await store.book({ ...req, notes: "Different" }, now)).outcome, "duplicate");
   const options = await store.available(date, "express", now);
   assert(!options.includes("21:00"));
-  assert(!options.includes("22:00"));
-  assert(options.includes("22:30"));
+  assert(!options.includes("21:30"));
+  assert(options.includes("22:00"));
   assert(options.includes("24:00"));
   assert(!options.includes("11:30"));
   assert.equal((await store.calendar("express", now))[date], options.length);
