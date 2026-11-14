@@ -1,0 +1,38 @@
+name: Import site source
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/import-site.yml
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import site files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import io
+          import pathlib
+          import zipfile
+
+          payload = pathlib.Path(".github/workflows/site-import.txt")
+          source = base64.b64decode("".join(payload.read_text().split()), validate=True)
+          assert hashlib.sha256(source).hexdigest() == "1c660f40ab374c84a7cb0273f41b35c7ca6847d7c13f2f4affe5e9c15f606b2f"
+          with zipfile.ZipFile(io.BytesIO(source)) as archive:
+              for entry in archive.namelist():
+                  path = pathlib.PurePosixPath(entry)
+                  assert not path.is_absolute() and ".." not in path.parts and path.parts[0] not in {".git", ".github"}
+              archive.extractall()
+          payload.unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Import Phuket Santa source and update booking calendar"
+          git push
