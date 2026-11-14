@@ -115,6 +115,7 @@ function Page() {
         </main>
 
         <footer className="mx-auto flex max-w-6xl flex-col items-center gap-2 border-t border-gold/10 px-4 py-12 text-center text-sm text-muted-foreground">
+          <img src="/favicon.svg" alt="" width={56} height={56} className="mb-1 h-14 w-14" />
           <p className="font-display text-2xl font-semibold text-gold">Волшебники Пхукета</p>
           <p className="font-display text-lg text-gold-soft">С Новым 2027 годом!</p>
           <p className="mt-2">Банг Тао · Камала · Патонг · Ката · Раваи и весь остров</p>
