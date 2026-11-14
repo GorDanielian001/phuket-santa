@@ -36,7 +36,7 @@ const PROGRAM_PRICES = {
 export const ADD_ON_PRICES = {
   manyKidsSurcharge: 500,
   transferFee: 300,
-  extras: { giftPerChild: 400, photographer: 2500, letter: 500 },
+  extras: { giftPerChild: 800, photographer: 2500, letter: 500 },
 };
 
 export function programPrice(program: ProgramId, date: string | null, time: string | null) {
