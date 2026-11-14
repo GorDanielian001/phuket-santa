@@ -53,11 +53,14 @@ describe("pricing", () => {
   });
 
   it("doubles only the program rate at midnight and excludes the hour program", () => {
-    const date = "2027-01-01";
-    expect(programPrice("express", date, "00:00")).toBe(32000);
-    expect(programPrice("khorovod", date, "00:00")).toBe(40000);
-    expect(programPrice("vip", date, "00:00")).toBeNull();
-    expect(calc({ date, time: "00:00", district: "panwa" })).toBe(40300);
+    const date = "2026-12-31";
+    expect(programPrice("express", date, "24:00")).toBe(32000);
+    expect(programPrice("khorovod", date, "24:00")).toBe(40000);
+    expect(programPrice("vip", date, "24:00")).toBeNull();
+    expect(calc({ date, time: "24:00", district: "panwa" })).toBe(40300);
+  });
+  it("keeps the regular price on the morning of 1 January", () => {
+    expect(programPrice("khorovod", "2027-01-01", "10:00")).toBe(10500);
   });
   it("season runs 20 Dec to 10 Jan", () => {
     const d = seasonDates();

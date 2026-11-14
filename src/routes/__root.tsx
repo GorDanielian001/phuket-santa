@@ -12,25 +12,45 @@ import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 
-function NotFoundComponent() {
+function ErrorShell({
+  code,
+  title,
+  text,
+  children,
+}: {
+  code?: string;
+  title: string;
+  text: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="glass max-w-md rounded-3xl px-8 py-10 text-center">
+        {code && <p className="font-display text-7xl font-semibold text-gold">{code}</p>}
+        <h1 className="mt-3 text-3xl font-semibold">{title}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{text}</p>
+        <div className="mt-7 flex flex-wrap justify-center gap-2">{children}</div>
       </div>
     </div>
+  );
+}
+
+const goldLink =
+  "inline-flex h-11 items-center justify-center rounded-full bg-gold-gradient px-6 text-sm font-semibold text-primary-foreground transition-[filter] hover:brightness-110";
+const glassLink =
+  "glass inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-medium text-foreground transition-colors hover:bg-glass-strong";
+
+function NotFoundComponent() {
+  return (
+    <ErrorShell
+      code="404"
+      title="Такой страницы нет"
+      text="Похоже, олени свернули не туда. Вернитесь на главную и соберите свой праздник."
+    >
+      <Link to="/" className={goldLink}>
+        На главную
+      </Link>
+    </ErrorShell>
   );
 }
 
@@ -39,33 +59,23 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
+    <ErrorShell
+      title="Страница не загрузилась"
+      text="Что-то пошло не так на нашей стороне. Попробуйте обновить страницу или вернитесь на главную."
+    >
+      <button
+        onClick={() => {
+          router.invalidate();
+          reset();
+        }}
+        className={goldLink}
+      >
+        Попробовать снова
+      </button>
+      <a href="/" className={glassLink}>
+        На главную
+      </a>
+    </ErrorShell>
   );
 }
 
@@ -77,7 +87,10 @@ export const Route = createRootRoute({
       { title: "Дед Мороз на Пхукете" },
       { name: "description", content: "Дед Мороз, Снегурочка и детские аниматоры на Пхукете." },
       { property: "og:title", content: "Дед Мороз на Пхукете" },
-      { property: "og:description", content: "Дед Мороз, Снегурочка и детские аниматоры на Пхукете." },
+      {
+        property: "og:description",
+        content: "Дед Мороз, Снегурочка и детские аниматоры на Пхукете.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

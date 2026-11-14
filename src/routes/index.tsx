@@ -9,7 +9,7 @@ import { Calculator } from "@/components/magic/Calculator";
 import { GoldenTicket, MobileBar } from "@/components/magic/Ticket";
 import { BookingDialog } from "@/components/magic/BookingDialog";
 import { calculate, type Selection } from "@/lib/pricing";
-import { useAvailability } from "@/lib/use-availability";
+import { useAvailability, useCalendar } from "@/lib/use-availability";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -47,11 +47,13 @@ function Page() {
   const [sel, setSel] = useState<Selection>(INITIAL);
   const [booking, setBooking] = useState<Selection | null>(null);
   const availability = useAvailability(sel.date, sel.program);
+  const calendar = useCalendar(sel.program);
   const total = calculate(sel).total;
 
   const refreshSlots = () => {
     setSel((previous) => ({ ...previous, time: null }));
     availability.retry();
+    calendar.retry();
   };
 
   const book = () => {
@@ -101,6 +103,7 @@ function Page() {
                 times={availability.times}
                 timeStatus={availability.status}
                 onRetry={availability.retry}
+                days={calendar.days}
               />
             </div>
             <div className="hidden lg:block">
@@ -111,15 +114,14 @@ function Page() {
           </div>
         </main>
 
-        <footer className="mx-auto flex max-w-6xl flex-col items-center gap-3 border-t border-gold/10 px-4 py-10 text-center text-sm text-muted-foreground">
-          <p className="font-display text-xl text-gold-soft">
-            Волшебники Пхукета · С Новым 2027 годом!
-          </p>
-          <p>Банг Тао · Камала · Патонг · Ката · Раваи и весь остров</p>
+        <footer className="mx-auto flex max-w-6xl flex-col items-center gap-2 border-t border-gold/10 px-4 py-12 text-center text-sm text-muted-foreground">
+          <p className="font-display text-2xl font-semibold text-gold">Волшебники Пхукета</p>
+          <p className="font-display text-lg text-gold-soft">С Новым 2027 годом!</p>
+          <p className="mt-2">Банг Тао · Камала · Патонг · Ката · Раваи и весь остров</p>
         </footer>
       </div>
 
-      <MobileBar total={total} onBook={book} />
+      <MobileBar sel={sel} total={total} onBook={book} />
       <BookingDialog
         selection={booking}
         onClose={() => setBooking(null)}

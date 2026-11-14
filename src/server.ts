@@ -1,9 +1,14 @@
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
-import { AVAILABILITY_ENDPOINT, BOOKING_ENDPOINT } from "./lib/booking.ts";
+import { AVAILABILITY_ENDPOINT, BOOKING_ENDPOINT, CALENDAR_ENDPOINT } from "./lib/booking.ts";
 import { TELEGRAM_ENDPOINT } from "./lib/booking-api.server.ts";
 import { startBookingApi } from "./lib/booking-runtime.server.ts";
 
-const paths = new Set([AVAILABILITY_ENDPOINT, BOOKING_ENDPOINT, TELEGRAM_ENDPOINT]);
+const paths = new Set([
+  AVAILABILITY_ENDPOINT,
+  BOOKING_ENDPOINT,
+  CALENDAR_ENDPOINT,
+  TELEGRAM_ENDPOINT,
+]);
 
 export default createServerEntry({
   async fetch(request, options) {

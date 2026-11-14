@@ -7,7 +7,7 @@ import { mock, test } from "node:test";
 import { createBookingApi } from "../src/lib/booking-api.server.ts";
 import { openBookingStore } from "../src/lib/booking-store.server.ts";
 import { programPrice } from "../src/lib/pricing.ts";
-import { offeredTimes, phuketTimestamp } from "../src/lib/schedule.ts";
+import { normalizeSlot, offeredTimes, phuketTimestamp } from "../src/lib/schedule.ts";
 import { createTelegram } from "../src/lib/telegram.server.ts";
 
 const now = phuketTimestamp("2026-12-30", "10:00");
@@ -73,14 +73,17 @@ test("all price bands, schedule boundaries and midnight booking options", () => 
   assert.deepEqual(at(eve, "20:30"), [13000, 17000, 24000]);
   assert.deepEqual(at(eve, "21:00"), [16000, 20000, 29000]);
   assert.deepEqual(at(eve, "23:00"), [16000, 20000, 29000]);
-  assert.deepEqual(at(newYear, "00:00"), [32000, 40000, null]);
+  assert.deepEqual(at(eve, "24:00"), [32000, 40000, null]);
   assert.deepEqual(at(newYear, "10:00"), [8000, 10500, 16000]);
   assert.deepEqual(offeredTimes(date, "express").slice(0, 3), ["10:00", "10:30", "11:00"]);
   assert.equal(offeredTimes(date, "express").at(-1), "22:00");
-  assert.equal(offeredTimes(eve, "express").at(-1), "23:00");
-  assert.equal(offeredTimes(newYear, "express")[0], "00:00");
-  assert.equal(offeredTimes(newYear, "vip")[0], "10:00");
-  assert.equal(phuketTimestamp(newYear, "00:00"), Date.parse("2026-12-31T17:00:00Z"));
+  assert.deepEqual(offeredTimes(eve, "express").slice(-2), ["23:00", "24:00"]);
+  assert.equal(offeredTimes(eve, "vip").at(-1), "23:00");
+  assert.equal(offeredTimes(newYear, "express")[0], "10:00");
+  assert.equal(phuketTimestamp(eve, "24:00"), Date.parse("2026-12-31T17:00:00Z"));
+  assert.equal(phuketTimestamp(eve, "00:00"), Date.parse("2026-12-30T17:00:00Z"));
+  assert.deepEqual(normalizeSlot(newYear, "00:00"), { date: eve, time: "24:00" });
+  assert.deepEqual(normalizeSlot(newYear, "10:00"), { date: newYear, time: "10:00" });
 });
 
 test("the actual duration blocks overlapping starts in both directions", (t) => {
@@ -90,18 +93,29 @@ test("the actual duration blocks overlapping starts in both directions", (t) => 
   assert.equal(store.book(request("15:30", "vip"), now).outcome, "unavailable");
   assert.equal(store.book(request("15:30", "khorovod"), now).outcome, "created");
   assert.equal(store.book(request("16:30", "vip"), now).outcome, "created");
-  assert(!store.available(date, "express", now).includes("17:00"));
-  assert(store.available(date, "express", now).includes("17:30"));
-  assert(!store.available(date, "express", now).includes("10:00"));
+  const free = store.available(date, "express", now);
+  assert(!free.includes("17:00"));
+  assert(free.includes("17:30"));
 });
 
-test("midnight has its own date, shares interval edges, and rejects the hour and 23:30", (t) => {
+test("starts closer than two hours from now are not offered", (t) => {
+  const store = setup(t);
+  const free = store.available(date, "express", now);
+  assert.equal(free[0], "12:00");
+  assert.equal(store.book(request("11:30", "express"), now).outcome, "unavailable");
+  assert.equal(store.calendar("express", now)[date], free.length);
+  assert.equal(store.calendar("express", now)["2026-12-29"], 0);
+  assert.equal(store.calendar("express", now)[eve], offeredTimes(eve, "express").length);
+});
+
+test("midnight closes 31 December and shares interval edges with 23:00", (t) => {
   const store = setup(t);
   assert.equal(store.book(request("23:30", "express", eve), now).outcome, "invalid");
-  assert.equal(store.book(request("00:00", "vip", newYear), now).outcome, "invalid");
+  assert.equal(store.book(request("24:00", "vip", eve), now).outcome, "invalid");
+  assert.equal(store.book(request("00:00", "express", eve), now).outcome, "invalid");
   assert.equal(store.book(request("23:00", "vip", eve), now).receipt.total, 29000);
-  assert.equal(store.book(request("00:00", "express", newYear), now).receipt.total, 32000);
-  assert.equal(store.book(request("00:00", "khorovod", newYear), now).outcome, "unavailable");
+  assert.equal(store.book(request("24:00", "express", eve), now).receipt.total, 32000);
+  assert.equal(store.book(request("24:00", "khorovod", eve), now).outcome, "unavailable");
 });
 
 test("retry returns the same receipt; reject or expiry releases only pending holds", (t) => {
@@ -119,13 +133,14 @@ test("retry returns the same receipt; reject or expiry releases only pending hol
   assert.equal(store.book(request(), third.holdUntil).outcome, "unavailable");
 });
 
-test("holds end at the start time for a last-minute request", (t) => {
+test("a request two hours before the start is held for 30 minutes", (t) => {
   const store = setup(t);
   const start = phuketTimestamp(date, "16:00");
-  const created = store.book(request(), start - 60_000);
-  assert.equal(created.receipt.holdUntil, start);
+  const twoHours = 2 * 60 * 60_000;
+  assert.equal(store.book(request(), start - twoHours + 1).outcome, "unavailable");
+  const created = store.book(request(), start - twoHours);
+  assert.equal(created.receipt.holdUntil, start - twoHours + 30 * 60_000);
   assert.equal(store.decide(created.receipt.id, "confirmed", start).status, "expired");
-  assert.equal(store.book(request(), start).outcome, "unavailable");
 });
 
 test("a second SQLite connection sees both the booking and the notification lease", (t) => {
@@ -175,6 +190,24 @@ test("public API validates data, rejects foreign origins and lists remaining tim
   const { times } = await slots.json();
   assert(!times.includes("16:00"));
   assert(times.includes("16:30"));
+  const calendar = await api.handle(
+    new Request("http://localhost:3000/api/calendar?program=khorovod"),
+  );
+  const { days } = await calendar.json();
+  assert.equal(Object.keys(days).length, 22);
+  assert.equal(days[date], times.length);
+  assert.equal(
+    (await api.handle(new Request("http://localhost:3000/api/calendar?program=x"))).status,
+    400,
+  );
+  const legacy = request("00:00", "khorovod", newYear);
+  const midnight = await api.handle(post("/api/bookings", legacy));
+  assert.equal(midnight.status, 201);
+  assert.equal((await midnight.json()).total, 40000);
+  const eveSlots = await api.handle(
+    new Request(`http://localhost:3000/api/availability?date=${eve}&program=express`),
+  );
+  assert(!(await eveSlots.json()).times.includes("24:00"));
 });
 
 test("Telegram notification retries; only the configured recipient can act on a booking", async (t) => {
@@ -201,6 +234,7 @@ test("Telegram notification retries; only the configured recipient can act on a 
   assert.equal(method, "sendMessage");
   assert.equal(message.chat_id, telegramConfig.chatId);
   assert.match(message.text, /Вилла в Камале/);
+  assert.match(message.text, /ср, 30 декабря · 16:00 по Пхукету/);
   assert.deepEqual(
     message.reply_markup.inline_keyboard[0].map((button) => button.callback_data),
     [`confirmed:${receipt.id}`, `rejected:${receipt.id}`],

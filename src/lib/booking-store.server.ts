@@ -3,7 +3,16 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { calculate, type ProgramId } from "./pricing.ts";
-import { offeredTimes, programInterval } from "./schedule.ts";
+import {
+  dayRange,
+  freeDays,
+  freeTimes,
+  isBookableStart,
+  offeredTimes,
+  programInterval,
+  seasonRange,
+  type BusyInterval,
+} from "./schedule.ts";
 import type { BookingReceipt, BookingRequest } from "./booking.ts";
 
 export type BookingStatus = "pending" | "confirmed" | "rejected" | "expired";
@@ -58,11 +67,12 @@ export function openBookingStore(filename: string) {
       sent_at INTEGER
     );
   `);
+  const active = "(status = 'confirmed' OR (status = 'pending' AND hold_until > ?))";
   const overlap = db.prepare(`
-    SELECT 1 FROM bookings
-    WHERE start_at < ? AND end_at > ?
-      AND (status = 'confirmed' OR (status = 'pending' AND hold_until > ?))
-    LIMIT 1
+    SELECT 1 FROM bookings WHERE start_at < ? AND end_at > ? AND ${active} LIMIT 1
+  `);
+  const busyBetween = db.prepare(`
+    SELECT start_at, end_at FROM bookings WHERE start_at < ? AND end_at > ? AND ${active}
   `);
   const byRequest = db.prepare("SELECT * FROM bookings WHERE request_id = ?");
   const byId = db.prepare("SELECT * FROM bookings WHERE id = ?");
@@ -107,10 +117,14 @@ export function openBookingStore(filename: string) {
   return {
     close: () => db.close(),
     available(date: string, program: ProgramId, now = Date.now()) {
-      return offeredTimes(date, program).filter((time) => {
-        const { start, end } = programInterval(date, time, program);
-        return start > now && !overlap.get(end, start, now);
-      });
+      const range = dayRange(date, program);
+      const busy = busyBetween.all(range.end, range.start, now) as BusyInterval[];
+      return freeTimes(date, program, busy, now);
+    },
+    calendar(program: ProgramId, now = Date.now()) {
+      const range = seasonRange();
+      const busy = busyBetween.all(range.end, range.start, now) as BusyInterval[];
+      return freeDays(program, busy, now);
     },
     book(request: BookingRequest, now = Date.now()) {
       const { selection, name, contact, address, notes, requestId } = request;
@@ -129,7 +143,7 @@ export function openBookingStore(filename: string) {
           if (status === "expired" || status === "rejected") return { outcome: status } as const;
           return { outcome: "existing", receipt: receipt(previous) } as const;
         }
-        if (start <= now || overlap.get(end, start, now))
+        if (!isBookableStart(start, now) || overlap.get(end, start, now))
           return { outcome: "unavailable" } as const;
         const total = calculate(selection).total;
         const holdUntil = Math.min(start, now + HOLD_MS);
