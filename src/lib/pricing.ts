@@ -17,7 +17,14 @@ export const VENUE_LABELS = {
 
 export const NEW_YEAR_EVE = "2026-12-31";
 export const NEW_YEAR_DAY = "2027-01-01";
-export const MIDNIGHT = "00:00";
+/**
+ * The New Year midnight visit belongs to 31 December and is stored as "24:00", the end of that
+ * day. It is the same moment as 1 January 00:00 and is shown to people as "00:00".
+ */
+export const MIDNIGHT = "24:00";
+/** 31 December price bands start at these times. */
+export const EVE_EVENING_FROM = "17:00";
+export const EVE_LATE_FROM = "21:00";
 
 const PROGRAM_PRICES = {
   regular: { express: 8_000, khorovod: 10_500, vip: 16_000 },
@@ -33,12 +40,12 @@ export const ADD_ON_PRICES = {
 };
 
 export function programPrice(program: ProgramId, date: string | null, time: string | null) {
-  if (date === NEW_YEAR_DAY && time === MIDNIGHT) {
+  if (date !== NEW_YEAR_EVE) return PROGRAM_PRICES.regular[program];
+  if (time === MIDNIGHT) {
     return program === "vip" ? null : PROGRAM_PRICES.december31Late[program] * 2;
   }
-  if (date !== NEW_YEAR_EVE) return PROGRAM_PRICES.regular[program];
-  if (time && time >= "21:00") return PROGRAM_PRICES.december31Late[program];
-  if (time && time >= "17:00") return PROGRAM_PRICES.december31Evening[program];
+  if (time && time >= EVE_LATE_FROM) return PROGRAM_PRICES.december31Late[program];
+  if (time && time >= EVE_EVENING_FROM) return PROGRAM_PRICES.december31Evening[program];
   return PROGRAM_PRICES.december31Day[program];
 }
 

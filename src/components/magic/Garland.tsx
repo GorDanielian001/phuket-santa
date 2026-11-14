@@ -5,7 +5,11 @@ const COUNT = 24;
 export function Garland() {
   return (
     <div aria-hidden className="pointer-events-none relative h-12 w-full overflow-hidden">
-      <svg className="absolute inset-x-0 top-0 h-10 w-full" viewBox="0 0 100 10" preserveAspectRatio="none">
+      <svg
+        className="absolute inset-x-0 top-0 h-10 w-full"
+        viewBox="0 0 100 10"
+        preserveAspectRatio="none"
+      >
         <path
           d="M0 1 Q 12.5 8 25 1 T 50 1 T 75 1 T 100 1"
           className="fill-none stroke-gold/40"
@@ -21,8 +25,14 @@ export function Garland() {
         return (
           <span
             key={i}
-            className={`bulb ${TONES[i % TONES.length]} absolute`}
-            style={{ left: `calc(${x * 100}% - 6px)`, top: `${y}px`, animationDelay: `${(i % 6) * 0.4}s` }}
+            // Every other bulb hides on phones so the wire does not look crowded.
+            // Tones are spread so the visible half on phones still cycles through all four colours.
+            className={`bulb ${TONES[(Math.floor(i / 2) + (i % 2) * 2) % TONES.length]} absolute ${i % 2 ? "max-sm:hidden" : ""}`}
+            style={{
+              left: `calc(${x * 100}% - 6px)`,
+              top: `${y}px`,
+              animationDelay: `${(i % 6) * 0.4}s`,
+            }}
           />
         );
       })}

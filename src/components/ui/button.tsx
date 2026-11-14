@@ -16,7 +16,7 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        gold: "bg-gold-gradient text-primary-foreground font-semibold rounded-full cta-pulse hover:brightness-110 active:scale-[0.98] transition-[filter,transform]",
+        gold: "bg-gold-gradient text-primary-foreground font-semibold rounded-full shadow-[0_0_0_1px_oklch(0.9_0.09_88/70%),0_8px_28px_-8px_oklch(0.83_0.15_82/55%)] hover:brightness-110 active:scale-[0.98] transition-[filter,transform]",
         ruby: "bg-ruby-gradient text-secondary-foreground font-semibold rounded-full shadow-[var(--glow-ruby)] hover:brightness-110 active:scale-[0.98] transition-[filter,transform]",
         glass: "glass rounded-full text-foreground hover:bg-glass-strong",
       },

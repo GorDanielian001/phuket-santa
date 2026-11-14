@@ -1,7 +1,12 @@
-import { AVAILABILITY_ENDPOINT, BOOKING_ENDPOINT, type BookingRequest } from "./booking.ts";
+import {
+  AVAILABILITY_ENDPOINT,
+  BOOKING_ENDPOINT,
+  CALENDAR_ENDPOINT,
+  type BookingRequest,
+} from "./booking.ts";
 import type { AsyncBookingStore } from "./booking-store.server.ts";
 import { DISTRICTS, VENUE_LABELS, type KidsOption, type VenueId } from "./pricing.ts";
-import { isProgram, isSeasonDate } from "./schedule.ts";
+import { isProgram, isSeasonDate, normalizeSlot } from "./schedule.ts";
 import type { createTelegram } from "./telegram.server.ts";
 
 export const TELEGRAM_ENDPOINT = "/api/telegram/webhook";
@@ -86,8 +91,7 @@ function validatedBooking(input: unknown): BookingRequest | null {
     return null;
   return {
     selection: {
-      date,
-      time,
+      ...normalizeSlot(date, time),
       program,
       kids: kids as KidsOption,
       venue: venue as VenueId,
@@ -130,6 +134,13 @@ export function createBookingApi(
           return json({ error: "Выберите дату и программу." }, 400);
         }
         return json({ times: await store.available(date, program) });
+      }
+      if (url.pathname === CALENDAR_ENDPOINT) {
+        if (request.method !== "GET")
+          return json({ error: "Метод не поддерживается." }, 405, "GET");
+        const program = url.searchParams.get("program");
+        if (!isProgram(program)) return json({ error: "Выберите программу." }, 400);
+        return json({ days: await store.calendar(program) });
       }
       if (url.pathname === BOOKING_ENDPOINT) {
         if (request.method !== "POST")

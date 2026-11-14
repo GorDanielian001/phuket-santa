@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { launchFireworks } from "@/lib/fireworks";
 import { formatTHB, type Selection } from "@/lib/pricing";
 import { BOOKING_ENDPOINT, type BookingReceipt, type BookingRequest } from "@/lib/booking";
-import { summarize } from "./Ticket";
+import { summarize } from "@/lib/summary";
+import { TicketDetails } from "./Ticket";
 
 const holdTime = new Intl.DateTimeFormat("ru-RU", {
   timeZone: "Asia/Bangkok",
@@ -208,7 +209,9 @@ export function BookingDialog({
           <div className="bg-ticket fade-up">
             <div className="p-6 text-center sm:p-8">
               <p className="text-xs uppercase tracking-[0.35em] text-gold">Заявка № {done.id}</p>
-              <div className="mt-4 text-6xl">🎅🛷</div>
+              <div className="mt-4 text-6xl" aria-hidden>
+                🎅🛷
+              </div>
               <DialogTitle className="mt-4 font-display text-3xl font-semibold leading-tight sm:text-4xl">
                 <span className="text-gold">Заявка принята!</span>
               </DialogTitle>
@@ -219,16 +222,7 @@ export function BookingDialog({
             </div>
             <div className="perforation" />
             <div className="p-6 sm:p-8">
-              <dl className="grid grid-cols-2 gap-3 text-sm">
-                {details.map((d) => (
-                  <div key={d.k}>
-                    <dt className="text-xs uppercase tracking-wider text-muted-foreground">
-                      {d.k}
-                    </dt>
-                    <dd className="font-medium">{d.v}</dd>
-                  </div>
-                ))}
-              </dl>
+              <TicketDetails details={details} />
               <ul className="mt-4 space-y-1.5 text-sm">
                 {done.total === total &&
                   rows.map((r) => (
@@ -242,7 +236,7 @@ export function BookingDialog({
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">
                   Итого
                 </span>
-                <span className="font-display text-4xl font-bold text-gold">
+                <span className="font-display text-4xl font-bold text-gold tabular-nums">
                   {formatTHB(done.total)}
                 </span>
               </div>

@@ -1,7 +1,16 @@
 import type { BookingRequest } from "./booking.ts";
 import type { AsyncBookingStore, BookingStatus } from "./booking-store.server.ts";
 import { calculate } from "./pricing.ts";
-import { offeredTimes, programInterval } from "./schedule.ts";
+import {
+  bufferedInterval,
+  freeDays,
+  earliestStart,
+  freeTimes,
+  offeredTimes,
+  programInterval,
+  seasonRange,
+  type BusyInterval,
+} from "./schedule.ts";
 
 type Statement = {
   bind(...values: (string | number | null)[]): Statement;
@@ -25,31 +34,26 @@ const receipt = (row: Row) => ({ id: row.id, total: row.total, holdUntil: row.ho
 const booking = (row: Row) => JSON.parse(row.payload) as Omit<BookingRequest, "requestId">;
 
 export function openD1BookingStore(db: BookingDatabase): AsyncBookingStore {
+  async function busy(range: { start: number; end: number }, now: number) {
+    const { results } = await db
+      .prepare(
+        `SELECT start_at, end_at FROM bookings WHERE start_at < ? AND end_at > ? AND ${active}`,
+      )
+      .bind(range.end, range.start, now)
+      .all<BusyInterval>();
+    return results;
+  }
+
   return {
     async available(date, program, now = Date.now()) {
-      const options = offeredTimes(date, program)
-        .map((time) => ({
-          time,
-          ...programInterval(date, time, program),
-        }))
-        .filter((option) => option.start > now);
-      const first = options[0];
-      const last = options.at(-1);
-      if (!first || !last) return [];
-      const { results } = await db
-        .prepare(
-          `
-        SELECT start_at, end_at FROM bookings
-        WHERE start_at < ? AND end_at > ? AND ${active}
-      `,
-        )
-        .bind(last.end, first.start, now)
-        .all<{ start_at: number; end_at: number }>();
-      return options
-        .filter(
-          ({ start, end }) => !results.some((row) => row.start_at < end && row.end_at > start),
-        )
-        .map(({ time }) => time);
+      const range = bufferedInterval({
+        start: programInterval(date, "00:00", program).start,
+        end: programInterval(date, "24:00", program).end,
+      });
+      return freeTimes(date, program, await busy(range, now), now);
+    },
+    async calendar(program, now = Date.now()) {
+      return freeDays(program, await busy(seasonRange(), now), now);
     },
     async book(request, now = Date.now()) {
       const { requestId, selection, name, contact, address, notes } = request;
@@ -58,6 +62,7 @@ export function openD1BookingStore(db: BookingDatabase): AsyncBookingStore {
         return { outcome: "invalid" };
       }
       const { start, end } = programInterval(date, time, program);
+      const wide = bufferedInterval({ start, end });
       const payload = JSON.stringify({ selection, name, contact, address, notes });
       const holdUntil = Math.min(start, now + 30 * 60_000);
       // The overlap check and insert are one SQL write. The trigger adds the outbox row in that write.
@@ -65,7 +70,7 @@ export function openD1BookingStore(db: BookingDatabase): AsyncBookingStore {
         .prepare(
           `
         INSERT INTO bookings (request_id, payload, start_at, end_at, total, hold_until)
-        SELECT ?, ?, ?, ?, ?, ? WHERE ? > ? AND NOT EXISTS (
+        SELECT ?, ?, ?, ?, ?, ? WHERE ? >= ? AND NOT EXISTS (
           SELECT 1 FROM bookings WHERE start_at < ? AND end_at > ? AND ${active}
         )
         ON CONFLICT(request_id) DO NOTHING
@@ -80,9 +85,9 @@ export function openD1BookingStore(db: BookingDatabase): AsyncBookingStore {
           calculate(selection).total,
           holdUntil,
           start,
-          now,
-          end,
-          start,
+          earliestStart(now),
+          wide.end,
+          wide.start,
           now,
         )
         .first<Row>();

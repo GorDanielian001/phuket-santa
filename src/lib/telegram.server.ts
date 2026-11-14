@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { DISTRICTS, formatTHB, PROGRAM_INFO, VENUE_LABELS } from "./pricing.ts";
+import { describeVisit } from "./schedule.ts";
 import type { BookingStatus, AsyncBookingStore } from "./booking-store.server.ts";
 import type { BookingRequest } from "./booking.ts";
 
@@ -68,6 +69,7 @@ function message({ id, booking, total, holdUntil, status }: BookingMessage) {
   const { selection: sel, name, contact, address, notes } = booking;
   const program = sel.program ? PROGRAM_INFO[sel.program] : null;
   const district = DISTRICTS.find((item) => item.id === sel.district);
+  const visit = sel.date ? describeVisit(sel.date, sel.time) : null;
   const extras = [
     sel.extras.gifts && "сладкие подарки",
     sel.extras.photographer && "фотограф",
@@ -78,7 +80,7 @@ function message({ id, booking, total, holdUntil, status }: BookingMessage) {
   return {
     text: [
       `Заявка №${id} · ${statusNames[status]}`,
-      `${sel.date} · ${sel.time} по Пхукету`,
+      visit && `${visit.day} · ${visit.time} по Пхукету`,
       program && `${program.title} · ${program.minutes} мин.`,
       `Детей: ${sel.kids === 5 ? "5+" : sel.kids}`,
       sel.venue && VENUE_LABELS[sel.venue],
