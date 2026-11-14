@@ -27,9 +27,9 @@ describe("pricing", () => {
     expect(calc({ kids: 4 })).toBe(11000);
     expect(calc({ kids: 5 })).toBe(11000);
   });
-  it("gifts cost 400 THB per child", () => {
+  it("gifts cost 800 THB per child", () => {
     expect(calc({ kids: 3, extras: { gifts: true, photographer: false, letter: false } })).toBe(
-      11700,
+      12900,
     );
   });
   it("photographer +2500, letter +500", () => {
