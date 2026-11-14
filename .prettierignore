@@ -1,0 +1,6 @@
+node_modules
+dist
+.output
+bun.lock
+data
+routeTree.gen.ts

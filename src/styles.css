@@ -1,0 +1,368 @@
+/*
+ * Tailwind v4 entry: config lives here, with no tailwind.config.js or PostCSS plugin.
+ * Keep every @import in this top block. Web fonts load via <link> in src/routes/__root.tsx.
+ */
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system — «Тропическая новогодняя ночь на Пхукете».
+ * Deep sapphire → tropical emerald → indigo night, warm gold garland light,
+ * ruby festive accents, frosted-glass surfaces with thin gold rims.
+ */
+
+@theme inline {
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-ruby: var(--ruby);
+  --color-emerald: var(--emerald);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-ivory: var(--ivory);
+  --color-night: var(--night);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Palette */
+  --night: oklch(0.155 0.04 268); /* #070B19 sapphire */
+  --night-emerald: oklch(0.2 0.035 180); /* #0A1F1C */
+  --night-indigo: oklch(0.2 0.07 278);
+  --gold: oklch(0.83 0.15 82);
+  --gold-soft: oklch(0.9 0.09 88);
+  --gold-deep: oklch(0.66 0.14 65);
+  --ruby: oklch(0.6 0.22 22);
+  --emerald: oklch(0.7 0.14 162);
+  --ivory: oklch(0.97 0.02 88);
+  --glass: oklch(1 0 0 / 5%);
+  --glass-strong: oklch(1 0 0 / 9%);
+
+  --background: var(--night);
+  --foreground: var(--ivory);
+  --card: oklch(1 0 0 / 5%);
+  --card-foreground: var(--ivory);
+  --popover: oklch(0.19 0.045 262);
+  --popover-foreground: var(--ivory);
+  --primary: var(--gold);
+  --primary-foreground: oklch(0.17 0.04 265);
+  --secondary: var(--ruby);
+  --secondary-foreground: var(--ivory);
+  --muted: oklch(1 0 0 / 6%);
+  --muted-foreground: oklch(0.8 0.035 85);
+  --accent: oklch(0.83 0.15 82 / 12%);
+  --accent-foreground: var(--gold-soft);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: var(--ivory);
+  --border: oklch(0.83 0.15 82 / 20%);
+  --input: oklch(0.83 0.15 82 / 25%);
+  --ring: oklch(0.83 0.15 82 / 60%);
+
+  /* Gradients & glows */
+  --gradient-night: linear-gradient(160deg, var(--night) 0%, var(--night-emerald) 48%, var(--night-indigo) 100%);
+  --gradient-gold: linear-gradient(100deg, var(--gold-soft) 0%, var(--gold) 40%, var(--gold-deep) 70%, var(--gold-soft) 100%);
+  --gradient-gold-button: linear-gradient(135deg, var(--gold-soft) 0%, var(--gold) 45%, var(--gold-deep) 100%);
+  --gradient-ruby: linear-gradient(135deg, oklch(0.68 0.21 25) 0%, var(--ruby) 55%, oklch(0.45 0.18 18) 100%);
+  --gradient-ticket: linear-gradient(150deg, oklch(0.88 0.12 88 / 16%) 0%, oklch(1 0 0 / 5%) 40%, oklch(0.6 0.22 22 / 10%) 100%);
+  --glow-gold: 0 0 0 1px oklch(0.83 0.15 82 / 70%), 0 0 22px oklch(0.83 0.15 82 / 45%), 0 0 60px oklch(0.83 0.15 82 / 20%);
+  --glow-ruby: 0 0 0 1px oklch(0.6 0.22 22 / 80%), 0 0 22px oklch(0.6 0.22 22 / 50%), 0 0 60px oklch(0.6 0.22 22 / 22%);
+  --shadow-glass: 0 20px 60px -20px oklch(0 0 0 / 60%);
+
+  --chart-1: var(--gold);
+  --chart-2: var(--emerald);
+  --chart-3: var(--ruby);
+  --chart-4: var(--gold-soft);
+  --chart-5: var(--gold-deep);
+  --sidebar: var(--night);
+  --sidebar-foreground: var(--ivory);
+  --sidebar-primary: var(--gold);
+  --sidebar-primary-foreground: var(--night);
+  --sidebar-accent: var(--glass-strong);
+  --sidebar-accent-foreground: var(--ivory);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--gradient-night);
+    background-attachment: fixed;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+  }
+}
+
+/* ---------- Surfaces ---------- */
+@utility glass {
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-glass);
+}
+
+@utility glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-glass);
+}
+
+@utility text-gold {
+  background: var(--gradient-gold);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gold-shimmer 6s linear infinite;
+}
+
+@utility bg-gold-gradient {
+  background: var(--gradient-gold-button);
+}
+@utility bg-ruby-gradient {
+  background: var(--gradient-ruby);
+}
+@utility bg-ticket {
+  background: var(--gradient-ticket);
+}
+
+/* Selection glows */
+@utility glow-gold {
+  border-color: oklch(0.83 0.15 82 / 80%);
+  box-shadow: var(--glow-gold);
+  background: oklch(0.83 0.15 82 / 10%);
+}
+@utility glow-ruby {
+  border-color: oklch(0.6 0.22 22 / 85%);
+  box-shadow: var(--glow-ruby);
+  background: oklch(0.6 0.22 22 / 12%);
+}
+
+/* Glass choice control (slots, chips, cards) */
+@utility choice {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  transition: box-shadow 0.35s ease, border-color 0.35s ease, background 0.35s ease, transform 0.2s ease;
+  &:hover {
+    border-color: oklch(0.83 0.15 82 / 45%);
+    background: var(--glass-strong);
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+  &[data-selected="true"] {
+    border-color: oklch(0.83 0.15 82 / 80%);
+    box-shadow: var(--glow-gold);
+    background: oklch(0.83 0.15 82 / 10%);
+  }
+  &[data-selected="true"][data-tone="ruby"] {
+    border-color: oklch(0.6 0.22 22 / 85%);
+    box-shadow: var(--glow-ruby);
+    background: oklch(0.6 0.22 22 / 12%);
+  }
+}
+
+/* Bokeh light blobs */
+@utility bokeh {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.35;
+  animation: bokeh-drift 18s ease-in-out infinite alternate;
+}
+@utility bokeh-gold {
+  background: var(--gold);
+}
+@utility bokeh-amber {
+  background: var(--gold-deep);
+}
+@utility bokeh-emerald {
+  background: var(--emerald);
+  opacity: 0.18;
+}
+@utility bokeh-ruby {
+  background: var(--ruby);
+  opacity: 0.18;
+}
+
+/* Garland bulbs */
+@utility bulb {
+  width: 12px;
+  height: 16px;
+  border-radius: 50% 50% 45% 45%;
+  animation: bulb-twinkle 2.4s ease-in-out infinite;
+}
+@utility bulb-gold {
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold), 0 0 24px oklch(0.83 0.15 82 / 60%);
+}
+@utility bulb-ruby {
+  background: var(--ruby);
+  box-shadow: 0 0 10px var(--ruby), 0 0 24px oklch(0.6 0.22 22 / 60%);
+}
+@utility bulb-emerald {
+  background: var(--emerald);
+  box-shadow: 0 0 10px var(--emerald), 0 0 24px oklch(0.7 0.14 162 / 60%);
+}
+@utility bulb-ivory {
+  background: var(--gold-soft);
+  box-shadow: 0 0 10px var(--gold-soft), 0 0 24px oklch(0.9 0.09 88 / 60%);
+}
+
+/* Ticket perforation */
+@utility perforation {
+  position: relative;
+  border-top: 2px dashed oklch(0.83 0.15 82 / 40%);
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: -14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 9999px;
+    background: var(--night);
+    border: 1px solid var(--border);
+  }
+  &::before {
+    left: -14px;
+  }
+  &::after {
+    right: -14px;
+  }
+}
+
+/* Neon pulse for primary CTA */
+@utility cta-pulse {
+  animation: cta-pulse 2.6s ease-in-out infinite;
+}
+
+@utility hero-frame {
+  box-shadow: 0 0 0 1px oklch(0.83 0.15 82 / 55%), 0 0 30px oklch(0.83 0.15 82 / 35%), 0 0 90px oklch(0.83 0.15 82 / 18%);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility fade-up {
+  animation: fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes gold-shimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+@keyframes bokeh-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(40px, -30px, 0) scale(1.15);
+  }
+}
+@keyframes bulb-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
+  50% {
+    opacity: 0.45;
+    filter: brightness(0.7);
+  }
+}
+@keyframes cta-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px oklch(0.9 0.09 88 / 70%), 0 0 18px oklch(0.83 0.15 82 / 45%);
+  }
+  50% {
+    box-shadow: 0 0 0 1px oklch(0.9 0.09 88 / 90%), 0 0 36px oklch(0.83 0.15 82 / 75%), 0 0 70px oklch(0.83 0.15 82 / 30%);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulb,
+  .bokeh,
+  .cta-pulse,
+  .text-gold {
+    animation: none;
+  }
+}
