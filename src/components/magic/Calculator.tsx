@@ -36,6 +36,7 @@ import {
   type Selection,
   type VenueId,
 } from "@/lib/pricing";
+import { offeredTimes } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { VisitWhen, type TimeStatus } from "./VisitWhen";
 
@@ -174,7 +175,15 @@ export function Calculator({
                 data-selected={sel.program === p.id}
                 disabled={price === null}
                 onClick={() =>
-                  onChange({ ...sel, program: p.id, time: p.id === sel.program ? sel.time : null })
+                  onChange({
+                    ...sel,
+                    program: p.id,
+                    // Keep the chosen start if the new program offers it too; availability is rechecked.
+                    time:
+                      sel.date && sel.time && offeredTimes(sel.date, p.id).includes(sel.time)
+                        ? sel.time
+                        : null,
+                  })
                 }
                 className={cn(
                   "choice relative flex flex-col items-start gap-3 rounded-3xl p-5 text-left",
